@@ -1,0 +1,22 @@
+@import "../../dijit/themes/claro/claro.css";
+@import "../../dgrid/css/skins/claro.css";
+
+.my-dropdown-menu {
+	position: absolute;
+	/* margin-top: -11px; */
+	background: white;
+	border: #CCC 1px solid;
+	width: auto;
+	max-height: 400px;
+	overflow-x: hidden;
+	overflow-y: scroll;
+	z-index: 1;
+}
+
+.dgrid-no-data,
+.dgrid-loading {
+	color: #aaa;
+	font-size: 3em;
+	padding: 3em;
+	text-align: center;
+}

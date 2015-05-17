@@ -1,0 +1,4 @@
+{
+	"name": "yo-dojo-app",
+	"dojoBuild": "package.js"
+}
