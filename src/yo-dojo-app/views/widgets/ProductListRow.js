@@ -2,6 +2,8 @@ define(['dojo/Evented', 'dojo/_base/declare', 'dijit/_WidgetBase', 'dijit/_Templ
         'dojo/text!./_templates/ProductListRow.html'],
     function (Evented, declare, _WidgetBase, _TemplatedMixin, template) {
 
+        'use strict';
+
         var ProductRow = declare([Evented, _WidgetBase, _TemplatedMixin], {
 
             templateString: template,

@@ -13,7 +13,7 @@ define(['dojo/request', 'dojo/Deferred', 'dojo/store/Memory'],
 
 			var deferred = new Deferred();
 
-			request.get('/noproducts', {handleAs: 'json'})
+			request.get('/products', {handleAs: 'json'})
 					.then(function (data) {
 						deferred.resolve(data);
 					});

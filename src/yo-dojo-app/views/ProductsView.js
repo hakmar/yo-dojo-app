@@ -2,17 +2,22 @@ define(['dojo/Evented', 'dojo/_base/declare', 'dijit/_WidgetBase', 'dijit/_Templ
 		'dojo/on', 'dojo/dom-construct', 'require',
 		'dstore/Memory',
 		'dstore/RequestMemory',
+		'dstore/Rest',
 		'dgrid/Grid',
 		'dgrid/OnDemandGrid',
+		'dgrid/Editor',
+		'dgrid/Selector',
+		'dgrid/Selection',
 		'../presenters/ProductListPresenter',
 		'./widgets/ProductDropdownRow',
 		'./widgets/ProductListRow',
 		'dojo/text!./_templates/ProductsView.html'], //  ,'dojox.dtl.Inline'],
-	function (Evented, declare, _WidgetBase, _TemplatedMixin, on, domConstruct, require,
-			  Memory, RequestMemory, Grid, OnDemandGrid,
-			  presenter, ProductDropdownRow, ProductListRow, template) {
+	function(Evented, declare, _WidgetBase, _TemplatedMixin, on, domConstruct, require,
+		Memory, RequestMemory, Rest, Grid, OnDemandGrid, Editor, Selector, Selection,
+		presenter, ProductDropdownRow, ProductListRow, template) {
 
-		//require("dojox.dtl.Inline");
+		'use strict';
+
 		var ProductListView = declare([_WidgetBase, _TemplatedMixin], {
 
 			templateString: template,
@@ -22,29 +27,17 @@ define(['dojo/Evented', 'dojo/_base/declare', 'dijit/_WidgetBase', 'dijit/_Templ
 			productListRows: null,
 			myGrid: null,
 
-			postCreate: function () {
+			postCreate: function() {
 				var self = this;
 
 				this.productDropdownRows = [];
 				this.productListRows = [];
 				//this.products = presenter.getAll();
 
-				var columns = {
-					id: 'Produkt',
-					name: 'Antal',
-					price: 'Pris'
-				};
-
-				this.myGrid = new OnDemandGrid({
-					//collection: new RequestMemory({ target: '/products' }),
-					columns: columns,
-					loadingMessage: 'Loading data...',
-					noDataMessage: 'No results found.'
-				}, 'myGrid');
-				this.myGrid.startup();
+				this.createGrid();
 
 				presenter.getAll()
-					.then(function (data) {
+					.then(function(data) {
 						self.products = data;
 						self.populateProductDropdown();
 
@@ -59,50 +52,80 @@ define(['dojo/Evented', 'dojo/_base/declare', 'dijit/_WidgetBase', 'dijit/_Templ
 					});
 			},
 
-			handleDropdownList: function () {
-				this.productDropdownRows.forEach(function (productDropdownRow) {
+			createGrid: function() {
+
+				//var columns = {
+				//	id: 'Produkt',
+				//	name: 'Antal',
+				//	price: 'Pris'
+				//};
+
+				var columns = [
+					{label: 'Selected', selector: 'checkbox'},
+					{label: 'Product', field: 'name', editor: 'text'},
+					{label: 'Quantity', field: 'quantity', editor: 'text'},
+					{label: 'Price', field: 'price', editor: 'text'},
+					{label: 'Active', field: 'active', editor: 'checkbox'}
+				];
+
+				//this.myGrid = new OnDemandGrid({
+				this.myGrid = new (declare([OnDemandGrid, Editor, Selector, Selection]))({
+					//collection: new Rest({ target: '/products' }),
+					collection: new RequestMemory({target: '/products'}),
+					columns: columns,
+					allowSelectAll: true,
+					allowSelect: function(row) {
+						return row.data.chosen;
+					},
+					selectionMode: 'none',
+					loadingMessage: 'Loading data...',
+					noDataMessage: 'No results found.'
+				}, 'myGrid');
+				this.myGrid.startup();
+			},
+
+			handleDropdownList: function() {
+				this.productDropdownRows.forEach(function(productDropdownRow) {
 					productDropdownRow.selector.checked = productDropdownRow.product.selected;
 					productDropdownRow.selector.disabled = productDropdownRow.product.selected;
 				});
 			},
 
-			showDropdownList: function (event) {
+			showDropdownList: function() {
 				this.productDropDown.classList.remove('hidden');
 				this.handleDropdownList();
 			},
 
-			hideDropdownList: function (event) {
-				var self = this;
-
-				if (event.target.tagName === 'DIV') {
+			hideDropdownList: function(event) {
+				if(event.target.tagName === 'DIV') {
 					this.productDropDown.classList.add('hidden');
 					this.handleDropdownList();
 				}
 			},
 
-			remove: function (product) {
+			remove: function(product) {
 				product.selected = false;
 				var ix = this.productListRows.indexOf(product);
 				this.productListRows.splice(ix, 1);
 				domConstruct.destroy(this.productListContainer.children[ix]);
 			},
 
-			populateProductDropdown: function () {
+			populateProductDropdown: function() {
 				var self = this;
 
-				this.products.forEach(function (product) {
+				this.products.forEach(function(product) {
 					var productDropdownRow = new ProductDropdownRow({product: product});
 
 					productDropdownRow.placeAt(self.productDropdownContainer);
 					self.productDropdownRows.push(productDropdownRow);
 
-					productDropdownRow.on('productSelection', function (selected, product) {
-						if (selected) {
+					productDropdownRow.on('productSelection', function(selected, product) {
+						if(selected) {
 							product.selected = true;
 							var productListRow = new ProductListRow({product: product});
 							productListRow.placeAt(self.productListContainer);
 							self.productListRows.push(product);
-							productListRow.on('remove', function (product) {
+							productListRow.on('remove', function(product) {
 								self.remove(product);
 							});
 						} else {
@@ -113,11 +136,11 @@ define(['dojo/Evented', 'dojo/_base/declare', 'dijit/_WidgetBase', 'dijit/_Templ
 				});
 			},
 
-			search: function (event) {
+			search: function() {
 				var self = this;
 				presenter.getAll()
-					.then(function (data) {
-						var store = new Memory({ data: data });
+					.then(function(data) {
+						var store = new Memory({data: data});
 						self.myGrid.set('collection', store);
 					});
 			}
